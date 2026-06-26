@@ -1,0 +1,67 @@
+<!--
+  Agent Gateway — APIM inbound policy (MCP enforcement point).
+  All values are APIM named-values ({{...}}) backed by Key Vault or non-secret config.
+  No secrets inline. Maps 1:1 to the methodology in github.com/rhinolands/agent-gateway-a2a.
+-->
+<policies>
+  <inbound>
+    <base />
+
+    <!-- 1) AuthN (edge): validate the caller's Entra ID JWT. Reject anonymous. -->
+    <validate-jwt header-name="Authorization" failed-validation-httpcode="401"
+                  failed-validation-error-message="Unauthorized"
+                  require-scheme="Bearer" output-token-variable-name="jwt">
+      <openid-config url="https://login.microsoftonline.com/{{tenant-id}}/v2.0/.well-known/openid-configuration" />
+      <audiences>
+        <audience>{{api-audience}}</audience>
+      </audiences>
+      <issuers>
+        <issuer>https://login.microsoftonline.com/{{tenant-id}}/v2.0</issuer>
+      </issuers>
+      <!-- 2) AuthZ: app must hold the app-only role granted to it (least privilege, no impersonation). -->
+      <required-claims>
+        <claim name="roles" match="any">
+          <value>Agent.Invoke</value>
+        </claim>
+      </required-claims>
+    </validate-jwt>
+
+    <!-- Pin the agent's app identity (appid) for per-agent controls + audit. Deny if absent. -->
+    <set-variable name="agentAppId"
+                  value="@(((Jwt)context.Variables["jwt"]).Claims.GetValueOrDefault("appid", ((Jwt)context.Variables["jwt"]).Claims.GetValueOrDefault("azp", "")))" />
+    <choose>
+      <when condition="@(string.IsNullOrEmpty((string)context.Variables["agentAppId"]))">
+        <return-response><set-status code="403" reason="No app identity" /></return-response>
+      </when>
+    </choose>
+
+    <!-- 3) Per-agent least privilege: rate-limit keyed on the agent's app identity (runaway containment). -->
+    <rate-limit-by-key calls="{{agent-rate-calls}}" renewal-period="{{agent-rate-period}}"
+                       counter-key="@((string)context.Variables["agentAppId"])" />
+
+    <!-- 4) Scoped backend auth via APIM managed identity — agent never holds a backend secret. -->
+    <authentication-managed-identity resource="{{mcp-backend-resource}}" />
+    <set-backend-service base-url="{{mcp-backend-url}}" />
+
+    <!-- Correlation id for the audit trail. -->
+    <set-header name="x-correlation-id" exists-action="skip">
+      <value>@(context.RequestId.ToString())</value>
+    </set-header>
+  </inbound>
+
+  <backend>
+    <base />
+  </backend>
+
+  <outbound>
+    <base />
+  </outbound>
+
+  <!-- Fail closed: any policy/backend error returns a denial, logged via diagnostics (App Insights). -->
+  <on-error>
+    <base />
+    <set-header name="x-correlation-id" exists-action="override">
+      <value>@(context.RequestId.ToString())</value>
+    </set-header>
+  </on-error>
+</policies>
