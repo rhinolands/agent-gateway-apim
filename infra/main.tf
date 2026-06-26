@@ -84,7 +84,7 @@ module "apim" {
   resource_group_name = module.rg.name
   publisher_name      = var.publisher_name
   publisher_email     = var.publisher_email
-  sku_name            = "Consumption_0"
+  sku_name            = var.sku_name
   enable_telemetry    = false
 
   managed_identities = {

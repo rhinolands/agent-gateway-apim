@@ -2,6 +2,7 @@
 resource_group_name  = "rg-agent-gateway"
 location             = "westeurope"
 name_prefix          = "agentgw"
+sku_name             = "BasicV2_1" # non-Consumption tier required for native APIM MCP Servers
 publisher_name       = "Your Name"
 publisher_email      = "publisher@example.org"
 tenant_id            = "00000000-0000-0000-0000-000000000000"

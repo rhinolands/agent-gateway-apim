@@ -43,6 +43,11 @@ curl -X POST "https://login.microsoftonline.com/$TENANT_ID/oauth2/v2.0/token" \
 curl "$APIM_GATEWAY_URL/agents/..." -H "Authorization: Bearer $TOKEN"
 ```
 
+## SKU / tier
+`sku_name` is a variable (default **`BasicV2_1`**). Two patterns, two tier requirements:
+- **Policy gateway** (this repo's enforcement — APIM *in front of* an MCP backend): works on **any** tier, incl. `Consumption_0`.
+- **APIM native MCP Servers** (APIM *hosts/exposes* MCP servers): supported on **all tiers except Consumption** — use `BasicV2`/`StandardV2`/`Premium`. Default `BasicV2_1` covers both; bump to `StandardV2`/`Premium` for production scale + the full AI-gateway policy set.
+
 ## Notes / hardening for production
 - Tighten Key Vault + APIM to **Private Endpoints** (the sample uses public networking for clarity).
 - Prefer **certificates** over client secrets; rotate; secrets only in Key Vault.

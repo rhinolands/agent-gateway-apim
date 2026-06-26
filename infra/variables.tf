@@ -49,6 +49,16 @@ variable "mcp_backend_resource" {
   description = "Resource (App ID URI) APIM requests a managed-identity token for, to call the backend"
 }
 
+variable "sku_name" {
+  type        = string
+  description = "APIM SKU. Use a non-Consumption tier (BasicV2/StandardV2/Premium) for native MCP Servers + AI-gateway features. Consumption_0 = policy gateway only (no native MCP Servers)."
+  default     = "BasicV2_1"
+  validation {
+    condition     = can(regex("^Consumption_0$|^Basic_[12]$|^BasicV2_([1-9]|10)$|^Developer_1$|^Standard_[1-4]$|^StandardV2_([1-9]|10)$|^Premium_([1-9][0-9]?)$|^PremiumV2_([1-9]|[12][0-9]|30)$", var.sku_name))
+    error_message = "Invalid APIM sku_name."
+  }
+}
+
 variable "agent_rate_calls" {
   type        = number
   description = "Per-agent rate limit: calls per renewal period"
