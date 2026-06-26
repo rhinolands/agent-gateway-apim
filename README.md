@@ -4,7 +4,7 @@ Working reference implementation of the **agent gateway / A2A boundary** pattern
 
 Methodology + rationale: **[agent-gateway-a2a](https://github.com/rhinolands/agent-gateway-a2a)**. This repo is the *how*.
 
-> **Status: private / pre-validation.** Deploy-tested before it goes public — infra code that doesn't deploy is worse than none.
+> **Validated.** `terraform fmt` + `validate` clean, CI-gated (fmt/validate + tfsec), and **deploy-proven** — `terraform apply` stood up all 17 resources against Azure (APIM, Key Vault, Log Analytics, App Insights, the policy + named-values), then torn down clean. Infra code that doesn't deploy is worse than none.
 
 ## What enforces what
 
