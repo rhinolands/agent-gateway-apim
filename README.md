@@ -11,12 +11,12 @@ Methodology + rationale: **[agent-gateway-a2a](https://github.com/rhinolands/age
 | File | Role |
 |---|---|
 | [`policies/agent-gateway.xml`](policies/agent-gateway.xml) | The enforcement: `validate-jwt` (authN) → required `Agent.Invoke` role (authZ) → per-agent rate-limit by app id → scoped backend auth via managed identity → correlation id → fail-closed `on-error` |
-| [`infra/main.bicep`](infra/main.bicep) | APIM (system-assigned MI), Key Vault (RBAC), least-privilege role assignment, config named-values, App Insights diagnostics |
+| [`infra/`](infra/) (Terraform) | APIM (system-assigned MI), Key Vault (RBAC), least-privilege role assignment, config named-values, App Insights diagnostics |
 | [`identity/app-registration.md`](identity/app-registration.md) | Entra setup — app-only agent identities, the `Agent.Invoke` app role, scoped backend access via the APIM MI, no impersonation |
 
 ## Best practices baked in
 
-- **No secrets in code or params.** Config via named-values; real secrets via **Key Vault** referenced by the APIM **managed identity** (pattern shown in `main.bicep`). `.env.example` only — `.env` is gitignored.
+- **No secrets in code or state.** Config via named-values; real secrets via **Key Vault** referenced by the APIM **managed identity** (pattern shown commented in `main.tf`). Inputs via `TF_VAR_*` env vars or `terraform.tfvars` — both gitignored, examples only.
 - **Managed identity, not stored credentials** — APIM authenticates to the backend and Key Vault as itself.
 - **Least privilege** — APIM identity gets only `Key Vault Secrets User`, scoped to the one vault; agents get only `Agent.Invoke`.
 - **App-only, no impersonation** — agents never inherit a user's reach.
@@ -25,14 +25,14 @@ Methodology + rationale: **[agent-gateway-a2a](https://github.com/rhinolands/age
 ## Deploy
 
 ```bash
-cp .env.example .env        # fill in your values (gitignored)
-cp infra/main.parameters.example.json infra/main.parameters.json   # gitignored
+cd infra
+cp terraform.tfvars.example terraform.tfvars   # fill in your values (gitignored)
+# or: set -a; source ../.env; set +a            # TF_VAR_* env vars instead
 
-az group create -n rg-agent-gateway -l westeurope
-az deployment group create \
-  -g rg-agent-gateway \
-  -f infra/main.bicep \
-  -p infra/main.parameters.json
+az login                      # azurerm uses your Azure CLI / env credentials
+terraform init
+terraform plan
+terraform apply
 ```
 Then set up identities per [`identity/app-registration.md`](identity/app-registration.md), and acquire an agent token:
 ```bash

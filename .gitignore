@@ -1,5 +1,9 @@
 .env
+*.tfvars
+!*.tfvars.example
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
 *.local.*
 .DS_Store
-main.parameters.json
-*.tfvars

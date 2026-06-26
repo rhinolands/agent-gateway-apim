@@ -1,0 +1,12 @@
+# Copy to terraform.tfvars (gitignored). Placeholders only — never commit real values.
+resource_group_name  = "rg-agent-gateway"
+location             = "westeurope"
+name_prefix          = "agentgw"
+publisher_name       = "Your Name"
+publisher_email      = "publisher@example.org"
+tenant_id            = "00000000-0000-0000-0000-000000000000"
+api_audience         = "api://agent-gateway"
+mcp_backend_url      = "https://your-mcp-backend.example.com"
+mcp_backend_resource = "api://your-mcp-backend"
+agent_rate_calls     = 60
+agent_rate_period    = 60
