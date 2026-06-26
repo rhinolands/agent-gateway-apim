@@ -11,7 +11,7 @@ Methodology + rationale: **[agent-gateway-a2a](https://github.com/rhinolands/age
 | File | Role |
 |---|---|
 | [`policies/agent-gateway.xml`](policies/agent-gateway.xml) | The enforcement: `validate-jwt` (authN) → required `Agent.Invoke` role (authZ) → per-agent rate-limit by app id → scoped backend auth via managed identity → correlation id → fail-closed `on-error` |
-| [`infra/`](infra/) (Terraform) | APIM (system-assigned MI), Key Vault (RBAC), least-privilege role assignment, config named-values, App Insights diagnostics |
+| [`infra/`](infra/) (Terraform + **Azure Verified Modules**) | APIM, Key Vault (RBAC), Log Analytics via AVM modules; system-assigned MI; least-privilege role assignment; config named-values; App Insights diagnostics |
 | [`identity/app-registration.md`](identity/app-registration.md) | Entra setup — app-only agent identities, the `Agent.Invoke` app role, scoped backend access via the APIM MI, no impersonation |
 
 ## Best practices baked in

@@ -16,8 +16,6 @@ provider "azurerm" {
   features {}
 }
 
-data "azurerm_client_config" "current" {}
-
 resource "random_string" "suffix" {
   length  = 6
   special = false
@@ -40,89 +38,84 @@ locals {
   }
 }
 
-resource "azurerm_resource_group" "this" {
-  name     = var.resource_group_name
-  location = var.location
+# ---- Azure Verified Modules (AVM) ----
+
+module "rg" {
+  source           = "Azure/avm-res-resources-resourcegroup/azurerm"
+  version          = "~> 0.2"
+  name             = var.resource_group_name
+  location         = var.location
+  enable_telemetry = false
 }
 
-resource "azurerm_log_analytics_workspace" "this" {
+module "law" {
+  source              = "Azure/avm-res-operationalinsights-workspace/azurerm"
+  version             = "~> 0.4"
   name                = "${var.name_prefix}-law-${local.suffix}"
-  location            = azurerm_resource_group.this.location
-  resource_group_name = azurerm_resource_group.this.name
-  sku                 = "PerGB2018"
-  retention_in_days   = 30
+  location            = var.location
+  resource_group_name = module.rg.name
+  enable_telemetry    = false
 }
 
-resource "azurerm_application_insights" "this" {
-  name                = "${var.name_prefix}-ai-${local.suffix}"
-  location            = azurerm_resource_group.this.location
-  resource_group_name = azurerm_resource_group.this.name
-  workspace_id        = azurerm_log_analytics_workspace.this.id
-  application_type    = "web"
-}
+# Key Vault (AVM) — RBAC by default. Grant the APIM identity least privilege here.
+module "kv" {
+  source              = "Azure/avm-res-keyvault-vault/azurerm"
+  version             = "~> 0.9"
+  name                = local.kv_name
+  location            = var.location
+  resource_group_name = module.rg.name
+  tenant_id           = var.tenant_id
+  enable_telemetry    = false
 
-# Key Vault in RBAC mode — identity-based least privilege, no access policies.
-resource "azurerm_key_vault" "this" {
-  name                       = local.kv_name
-  location                   = azurerm_resource_group.this.location
-  resource_group_name        = azurerm_resource_group.this.name
-  tenant_id                  = var.tenant_id
-  sku_name                   = "standard"
-  rbac_authorization_enabled = true
-  soft_delete_retention_days = 7
-  # Tighten to a Private Endpoint in production.
-}
-
-# APIM with a system-assigned managed identity — no client secrets anywhere.
-resource "azurerm_api_management" "this" {
-  name                = local.apim_name
-  location            = azurerm_resource_group.this.location
-  resource_group_name = azurerm_resource_group.this.name
-  publisher_name      = var.publisher_name
-  publisher_email     = var.publisher_email
-  sku_name            = "Consumption_0"
-
-  identity {
-    type = "SystemAssigned"
+  role_assignments = {
+    apim_secrets = {
+      role_definition_id_or_name = "Key Vault Secrets User"
+      principal_id               = module.apim.resource.identity[0].principal_id
+    }
   }
 }
 
-# Least privilege: ONLY Key Vault Secrets User, scoped to this vault, for the APIM identity.
-resource "azurerm_role_assignment" "apim_kv_secrets" {
-  scope                = azurerm_key_vault.this.id
-  role_definition_name = "Key Vault Secrets User"
-  principal_id         = azurerm_api_management.this.identity[0].principal_id
+# APIM (AVM) — system-assigned managed identity, no secrets.
+module "apim" {
+  source              = "Azure/avm-res-apimanagement-service/azurerm"
+  version             = "~> 0.0.5"
+  name                = local.apim_name
+  location            = var.location
+  resource_group_name = module.rg.name
+  publisher_name      = var.publisher_name
+  publisher_email     = var.publisher_email
+  sku_name            = "Consumption_0"
+  enable_telemetry    = false
+
+  managed_identities = {
+    system_assigned = true
+  }
 }
 
-# Config named-values referenced by the policy. Non-secret.
+# ---- APIM sub-config (raw azurerm against the AVM module outputs) ----
+
+resource "azurerm_application_insights" "this" {
+  name                = "${var.name_prefix}-ai-${local.suffix}"
+  location            = var.location
+  resource_group_name = module.rg.name
+  workspace_id        = module.law.resource_id
+  application_type    = "web"
+}
+
 resource "azurerm_api_management_named_value" "config" {
   for_each            = local.config
   name                = each.key
   display_name        = each.key
-  resource_group_name = azurerm_resource_group.this.name
-  api_management_name = azurerm_api_management.this.name
+  resource_group_name = module.rg.name
+  api_management_name = module.apim.name
   value               = each.value
   secret              = false
 }
 
-# Pattern for a REAL secret: a named-value sourced from Key Vault via the APIM managed identity.
-# Put the secret in Key Vault, never inline. Depends on the role assignment above.
-# resource "azurerm_api_management_named_value" "signing_secret" {
-#   name                = "signing-secret"
-#   display_name        = "signing-secret"
-#   resource_group_name = azurerm_resource_group.this.name
-#   api_management_name = azurerm_api_management.this.name
-#   secret              = true
-#   value_from_key_vault {
-#     secret_id = "${azurerm_key_vault.this.vault_uri}secrets/signing-secret"
-#   }
-#   depends_on = [azurerm_role_assignment.apim_kv_secrets]
-# }
-
 resource "azurerm_api_management_api" "gateway" {
   name                  = "agent-gateway"
-  resource_group_name   = azurerm_resource_group.this.name
-  api_management_name   = azurerm_api_management.this.name
+  resource_group_name   = module.rg.name
+  api_management_name   = module.apim.name
   revision              = "1"
   display_name          = "Agent Gateway (MCP)"
   path                  = "agents"
@@ -130,20 +123,18 @@ resource "azurerm_api_management_api" "gateway" {
   subscription_required = false # authN is the JWT, not an APIM key
 }
 
-# Apply the enforcement policy from the policies file (single source of truth).
 resource "azurerm_api_management_api_policy" "gateway" {
   api_name            = azurerm_api_management_api.gateway.name
-  resource_group_name = azurerm_resource_group.this.name
-  api_management_name = azurerm_api_management.this.name
+  resource_group_name = module.rg.name
+  api_management_name = module.apim.name
   xml_content         = file("${path.module}/../policies/agent-gateway.xml")
   depends_on          = [azurerm_api_management_named_value.config]
 }
 
-# Audit trail: APIM logs/metrics to Log Analytics.
 resource "azurerm_monitor_diagnostic_setting" "apim" {
   name                       = "apim-to-law"
-  target_resource_id         = azurerm_api_management.this.id
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.this.id
+  target_resource_id         = module.apim.resource_id
+  log_analytics_workspace_id = module.law.resource_id
 
   enabled_log {
     category_group = "allLogs"
