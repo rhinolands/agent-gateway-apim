@@ -53,5 +53,19 @@ curl "$APIM_GATEWAY_URL/agents/..." -H "Authorization: Bearer $TOKEN"
 - Prefer **certificates** over client secrets; rotate; secrets only in Key Vault.
 - Add a per-agent **peer allowlist** for A2A and a **tool allowlist** as named-values or an external policy decision point (OPA-style) for richer authZ.
 
+## Validation
+
+Statically validated (`fmt` + `validate`), CI-gated (fmt/validate + tfsec), and **deploy-proven on Azure** (BasicV2): `terraform apply` stood up the full stack, then torn down clean.
+
+_Masked portal screenshots in [`docs/screenshots/`](docs/screenshots/): deployed resource group · APIM Basic v2 · native MCP Server fronting a backend · the enforcement policy injecting the scoped `Authorization` header._
+
+End-to-end test — a client call reaches the backend MCP *through* the gateway, authenticated by a policy-injected scoped credential:
+```text
+$ curl -i -H "Accept: text/event-stream" https://<your-apim>.azure-api.net/rhino/sse
+HTTP/1.1 400 Bad Request
+{"jsonrpc":"2.0","error":{"code":-32000,"message":"Bad Request: Server not initialized"}}
+```
+The `400`/`406` JSON-RPC responses are the *backend MCP server* answering: the gateway authenticated and proxied the request through; a full tools list needs a real MCP client to complete the `initialize` handshake. (Note: in the preview MCP-Servers policy scope, instance named-values didn't resolve yet — the scoped credential was injected inline for the test; use Key Vault / named-values in production, as `main.tf` shows.)
+
 ## License
 MIT — see [LICENSE](LICENSE). By **Gustavo Norymberg** — Cloud & DevOps Architect.
