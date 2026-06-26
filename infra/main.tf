@@ -100,7 +100,7 @@ resource "azurerm_api_management_named_value" "config" {
   name                = each.key
   display_name        = each.key
   resource_group_name = azurerm_resource_group.this.name
-  api_management_name  = azurerm_api_management.this.name
+  api_management_name = azurerm_api_management.this.name
   value               = each.value
   secret              = false
 }
@@ -120,13 +120,13 @@ resource "azurerm_api_management_named_value" "config" {
 # }
 
 resource "azurerm_api_management_api" "gateway" {
-  name                = "agent-gateway"
-  resource_group_name = azurerm_resource_group.this.name
-  api_management_name = azurerm_api_management.this.name
-  revision            = "1"
-  display_name        = "Agent Gateway (MCP)"
-  path                = "agents"
-  protocols           = ["https"]
+  name                  = "agent-gateway"
+  resource_group_name   = azurerm_resource_group.this.name
+  api_management_name   = azurerm_api_management.this.name
+  revision              = "1"
+  display_name          = "Agent Gateway (MCP)"
+  path                  = "agents"
+  protocols             = ["https"]
   subscription_required = false # authN is the JWT, not an APIM key
 }
 
@@ -148,7 +148,7 @@ resource "azurerm_monitor_diagnostic_setting" "apim" {
   enabled_log {
     category_group = "allLogs"
   }
-  metric {
+  enabled_metric {
     category = "AllMetrics"
   }
 }
