@@ -11,4 +11,5 @@ output "key_vault_name" {
 output "apim_principal_id" {
   description = "APIM managed-identity principal id — grant it scoped backend access"
   value       = module.apim.resource.identity[0].principal_id
+  sensitive   = true
 }
