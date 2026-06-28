@@ -1,0 +1,67 @@
+<svg viewBox="0 0 680 532" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" role="img" aria-label="Governed agent gateway on Azure APIM: an AI agent obtains an app-only token from Microsoft Entra ID, calls Azure APIM with a Bearer JWT, APIM runs a four-step fail-closed policy pipeline (validate-jwt, authorize role, rate-limit, managed-identity auth) then forwards to the MCP/A2A backend, pulling secrets from Key Vault and auditing every allow or deny to Log Analytics.">
+<defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#444441"/></marker>
+<marker id="arb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#185FA5"/></marker>
+<marker id="art" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0F6E56"/></marker>
+<marker id="ara" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#854F0B"/></marker>
+<marker id="arg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3B6D11"/></marker>
+</defs>
+
+<rect x="2" y="2" width="676" height="528" rx="14" fill="#FFFFFF" stroke="#D0D7DE" stroke-width="1.5"/>
+<text x="24" y="40" font-size="18" font-weight="700" fill="#1F2328">Governed Agent Gateway · Azure APIM</text>
+
+<rect x="210" y="128" width="256" height="272" rx="12" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.6"/>
+<text x="338" y="154" text-anchor="middle" font-size="14.5" font-weight="700" fill="#3C3489">Azure APIM · Policy Gateway</text>
+
+<rect x="224" y="170" width="228" height="40" rx="8" fill="#FFFFFF" stroke="#B4B2A9"/>
+<text x="338" y="188" text-anchor="middle" font-size="13.5" font-weight="600" fill="#2C2C2A">validate-jwt</text>
+<text x="338" y="203" text-anchor="middle" font-size="11.5" fill="#5F5E5A">verify Entra signature + claims</text>
+<rect x="224" y="216" width="228" height="40" rx="8" fill="#FFFFFF" stroke="#B4B2A9"/>
+<text x="338" y="234" text-anchor="middle" font-size="13.5" font-weight="600" fill="#2C2C2A">authorize role</text>
+<text x="338" y="249" text-anchor="middle" font-size="11.5" fill="#5F5E5A">Agent.Invoke required</text>
+<rect x="224" y="262" width="228" height="40" rx="8" fill="#FFFFFF" stroke="#B4B2A9"/>
+<text x="338" y="280" text-anchor="middle" font-size="13.5" font-weight="600" fill="#2C2C2A">rate-limit-by-key</text>
+<text x="338" y="295" text-anchor="middle" font-size="11.5" fill="#5F5E5A">per-persona quota</text>
+<rect x="224" y="308" width="228" height="40" rx="8" fill="#FFFFFF" stroke="#B4B2A9"/>
+<text x="338" y="326" text-anchor="middle" font-size="13.5" font-weight="600" fill="#2C2C2A">managed-identity auth</text>
+<text x="338" y="341" text-anchor="middle" font-size="11.5" fill="#5F5E5A">inject backend credential</text>
+<text x="338" y="372" text-anchor="middle" font-size="12" font-weight="700" fill="#A32D2D">fail-closed · 401 / 403 on any deny</text>
+
+<rect x="20" y="240" width="118" height="74" rx="10" fill="#5F5E5A"/>
+<text x="79" y="274" text-anchor="middle" font-size="14" font-weight="600" fill="#FFFFFF">AI Agent</text>
+<text x="79" y="293" text-anchor="middle" font-size="11.5" fill="#E7E7E3">app identity</text>
+
+<rect x="250" y="46" width="168" height="56" rx="10" fill="#185FA5"/>
+<text x="334" y="71" text-anchor="middle" font-size="14" font-weight="600" fill="#FFFFFF">Microsoft Entra ID</text>
+<text x="334" y="89" text-anchor="middle" font-size="11.5" fill="#D6E6F6">issues scoped token</text>
+
+<rect x="512" y="240" width="150" height="74" rx="10" fill="#0F6E56"/>
+<text x="587" y="274" text-anchor="middle" font-size="14" font-weight="600" fill="#FFFFFF">MCP / A2A Backend</text>
+<text x="587" y="293" text-anchor="middle" font-size="11.5" fill="#CDEAE0">governed actions</text>
+
+<rect x="150" y="438" width="148" height="60" rx="10" fill="#854F0B"/>
+<text x="224" y="465" text-anchor="middle" font-size="13.5" font-weight="600" fill="#FFFFFF">Azure Key Vault</text>
+<text x="224" y="483" text-anchor="middle" font-size="11.5" fill="#F1DEC2">secrets via MI</text>
+
+<rect x="340" y="438" width="232" height="60" rx="10" fill="#3B6D11"/>
+<text x="456" y="465" text-anchor="middle" font-size="13.5" font-weight="600" fill="#FFFFFF">Log Analytics + App Insights</text>
+<text x="456" y="483" text-anchor="middle" font-size="11.5" fill="#DCEBC8">audit every allow / deny</text>
+
+<path d="M106,240 C72,188 150,126 252,98" fill="none" stroke="#185FA5" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arb)"/>
+<text x="34" y="158" font-size="11.5" font-weight="700" fill="#185FA5">1 · app-only token</text>
+
+<path d="M334,102 L334,128" fill="none" stroke="#185FA5" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arb)"/>
+<text x="344" y="120" font-size="11.5" fill="#185FA5">JWKS validate</text>
+
+<path d="M138,277 L210,277" fill="none" stroke="#444441" stroke-width="2.2" marker-end="url(#ar)"/>
+<text x="205" y="224" text-anchor="end" font-size="11.5" font-weight="700" fill="#444441">2 · call + Bearer JWT</text>
+
+<path d="M466,277 L512,277" fill="none" stroke="#0F6E56" stroke-width="2.2" marker-end="url(#art)"/>
+<text x="474" y="222" font-size="11.5" font-weight="700" fill="#0F6E56">3 · forward (MI auth)</text>
+
+<path d="M276,400 L232,438" fill="none" stroke="#854F0B" stroke-width="2" marker-end="url(#ara)"/>
+<text x="150" y="422" font-size="11.5" fill="#854F0B">secrets · MI</text>
+
+<path d="M404,400 L446,438" fill="none" stroke="#3B6D11" stroke-width="2" marker-end="url(#arg)"/>
+<text x="452" y="422" font-size="11.5" fill="#3B6D11">audit allow / deny</text>
+</svg>

@@ -4,6 +4,12 @@ Working reference implementation of the **agent gateway / A2A boundary** pattern
 
 Methodology + rationale: **[agent-gateway-a2a](https://github.com/rhinolands/agent-gateway-a2a)**. This repo is the *how*.
 
+## Architecture
+
+![Request flow: an AI agent gets an app-only token from Microsoft Entra ID, calls Azure APIM with a Bearer JWT; APIM runs a fail-closed policy pipeline — validate-jwt, authorize role, rate-limit, managed-identity auth — then forwards to the MCP/A2A backend, pulling secrets from Key Vault and auditing every allow or deny to Log Analytics.](docs/architecture.svg)
+
+The agent authenticates as an **app-only identity** to Entra ID, then calls APIM with a Bearer JWT. APIM runs a **fail-closed policy pipeline** — `validate-jwt` → `Agent.Invoke` authorization → per-agent rate-limit → managed-identity backend auth — before any call reaches the backend. Secrets are pulled from Key Vault by the APIM managed identity; every allow/deny is audited to Log Analytics.
+
 > **Validated.** `terraform fmt` + `validate` clean, CI-gated (fmt/validate + tfsec), and **deploy-proven** — `terraform apply` stood up all 17 resources against Azure (APIM, Key Vault, Log Analytics, App Insights, the policy + named-values), then torn down clean. Infra code that doesn't deploy is worse than none.
 
 ## What enforces what
@@ -56,8 +62,6 @@ curl "$APIM_GATEWAY_URL/agents/..." -H "Authorization: Bearer $TOKEN"
 ## Validation
 
 Statically validated (`fmt` + `validate`), CI-gated (fmt/validate + tfsec), and **deploy-proven on Azure** (BasicV2): `terraform apply` stood up the full stack, then torn down clean.
-
-_Masked portal screenshots in [`docs/screenshots/`](docs/screenshots/): deployed resource group · APIM Basic v2 · native MCP Server fronting a backend · the enforcement policy injecting the scoped `Authorization` header._
 
 End-to-end test — a client call reaches the backend MCP *through* the gateway, authenticated by a policy-injected scoped credential:
 ```text
