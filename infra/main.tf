@@ -112,6 +112,21 @@ resource "azurerm_api_management_named_value" "config" {
   secret              = false
 }
 
+# Real secrets do not go in local.config. Store them in Key Vault and point a
+# secret named value at them. APIM reads them with its managed identity, which
+# holds Key Vault Secrets User on this vault (see module "kv" above).
+#
+# resource "azurerm_api_management_named_value" "backend_secret" {
+#   name                = "backend-secret"
+#   display_name        = "backend-secret"
+#   resource_group_name = module.rg.name
+#   api_management_name = module.apim.name
+#   secret              = true
+#   value_from_key_vault {
+#     secret_id = azurerm_key_vault_secret.backend.versionless_id
+#   }
+# }
+
 resource "azurerm_api_management_api" "gateway" {
   name                  = "agent-gateway"
   resource_group_name   = module.rg.name

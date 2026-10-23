@@ -1,7 +1,8 @@
 <!--
   Agent Gateway — APIM inbound policy (MCP enforcement point).
-  All values are APIM named-values ({{...}}) backed by Key Vault or non-secret config.
-  No secrets inline. Maps 1:1 to the methodology in github.com/rhinolands/agent-gateway-a2a.
+  All values are APIM named-values ({{...}}). In this sample they are all
+  non-secret config. Real secrets belong in Key Vault-backed named values
+  (pattern in infra/main.tf). No secrets inline. Maps 1:1 to the methodology in github.com/rhinolands/agent-gateway-a2a.
 -->
 <policies>
   <inbound>

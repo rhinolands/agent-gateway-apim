@@ -10,14 +10,14 @@ Methodology + rationale: **[agent-gateway-a2a](https://github.com/rhinolands/age
 
 The agent authenticates as an **app-only identity** to Entra ID, then calls APIM with a Bearer JWT. APIM runs a **fail-closed policy pipeline** — `validate-jwt` → `Agent.Invoke` authorization → per-agent rate-limit → managed-identity backend auth — before any call reaches the backend. Secrets are pulled from Key Vault by the APIM managed identity; every allow/deny is audited to Log Analytics.
 
-> **Validated.** `terraform fmt` + `validate` clean, CI-gated (fmt/validate + tfsec), and **deploy-proven** — `terraform apply` stood up all 17 resources against Azure (APIM, Key Vault, Log Analytics, App Insights, the policy + named-values), then torn down clean. Infra code that doesn't deploy is worse than none.
+> **Validated.** `terraform fmt` + `validate` clean, CI-gated (fmt/validate + tfsec + gitleaks), and **deploy-proven** — `terraform apply` stood up all 17 resources against Azure (APIM, Key Vault, Log Analytics, App Insights, the policy + named-values), then torn down clean. Infra code that doesn't deploy is worse than none.
 
 ## What enforces what
 
 | File | Role |
 |---|---|
 | [`policies/agent-gateway.xml`](policies/agent-gateway.xml) | The enforcement: `validate-jwt` (authN) → required `Agent.Invoke` role (authZ) → per-agent rate-limit by app id → scoped backend auth via managed identity → correlation id → fail-closed `on-error` |
-| [`infra/`](infra/) (Terraform + **Azure Verified Modules**) | APIM, Key Vault (RBAC), Log Analytics via AVM modules; system-assigned MI; least-privilege role assignment; config named-values; App Insights diagnostics |
+| [`infra/`](infra/) (Terraform + **Azure Verified Modules**) | APIM, Key Vault (RBAC), Log Analytics via AVM modules; system-assigned MI; least-privilege role assignment; config named-values; Log Analytics diagnostics; App Insights resource (not yet attached to APIM) |
 | [`identity/app-registration.md`](identity/app-registration.md) | Entra setup — app-only agent identities, the `Agent.Invoke` app role, scoped backend access via the APIM MI, no impersonation |
 
 ## Best practices baked in
@@ -26,7 +26,8 @@ The agent authenticates as an **app-only identity** to Entra ID, then calls APIM
 - **Managed identity, not stored credentials** — APIM authenticates to the backend and Key Vault as itself.
 - **Least privilege** — APIM identity gets only `Key Vault Secrets User`, scoped to the one vault; agents get only `Agent.Invoke`.
 - **App-only, no impersonation** — agents never inherit a user's reach.
-- **Fail closed + audit** — denials on any gap; logs/metrics to App Insights with a correlation id.
+- **Fail closed + audit** — denials on any gap. APIM resource logs and metrics go to Log Analytics. Each request carries a correlation id header.
+- **App Insights is created but not attached.** It sits on the same workspace. No APIM logger points at it yet.
 
 ## Deploy
 
@@ -61,7 +62,7 @@ curl "$APIM_GATEWAY_URL/agents/..." -H "Authorization: Bearer $TOKEN"
 
 ## Validation
 
-Statically validated (`fmt` + `validate`), CI-gated (fmt/validate + tfsec), and **deploy-proven on Azure** (BasicV2): `terraform apply` stood up the full stack, then torn down clean.
+Statically validated (`fmt` + `validate`), CI-gated (fmt/validate + tfsec + gitleaks), and **deploy-proven on Azure** (BasicV2): `terraform apply` stood up the full stack, then torn down clean.
 
 End-to-end test — a client call reaches the backend MCP *through* the gateway, authenticated by a policy-injected scoped credential:
 ```text
