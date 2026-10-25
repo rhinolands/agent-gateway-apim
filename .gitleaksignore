@@ -1,0 +1,3 @@
+# Public Azure built-in role id (Key Vault Secrets User), not a secret.
+# First commit, infra/main.bicep, before the Terraform conversion.
+ff80037432465b77a47a9902788318370ec8d8f5:infra/main.bicep:generic-api-key:42
